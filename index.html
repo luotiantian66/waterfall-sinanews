@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>waterfall-lazyload</title>
+	<script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		html,body {
+			height: 100%;
+		}
+		.container {
+			width: 968px;
+			margin:10px auto;
+			position: relative;
+		}
+		.blk {
+			display: inline-block;
+			position: absolute;
+			padding: 10px;
+			margin:10px;
+			width: 300px;
+			border: 1px solid #d0d0d0;
+		}
+		img {
+			width: 280px;
+		}
+		.title {
+			padding: 10px;
+			border-bottom: 1px solid #BEBEBE;		
+		}
+		.detail {
+			padding: 10px;
+			color: #5B5B5B;
+			font-size: 12px;
+			line-height: 18px;
+		}
+		
+	</style>
+</head>
+<body>
+	<div class="container">
+		<!--<a href="">
+			<div class="blk">
+				<img src="http://n.sinaimg.cn/tech/transform/w600h400/20180109/Rvxm-fyqnici7290391.jpg" alt="">
+				<div class="title">
+					<h4>肯尼亚五头大象相约打群架</h4>
+				</div>
+				<div class="detail">
+					肯尼亚南部西查沃国家公园，摄影师Shazaad Kasmani在当地拍摄到几头大象聚集打群架的画面。
+				</div>
+			</div>
+		</a>-->
+	</div>
+</body>
+<script>
+	
+	var	waterfall = {
+		init:function(){
+			curPage = 1
+			perPageCount = 9
+			this.isLoading = false
+			this.$container = $('.container')
+			this.$window = $(window)
+			this.$body = $('body')
+			this.$blk = $('.blk')
+			blkWidth = 320
+			this.$colHeight = []	
+			colNum = 3
+			for(i=0;i<colNum;i++){
+				this.$colHeight[i] = 0;
+			}
+			this.bind()
+		},
+		bind:function(){	//绑定事件
+			var clock
+			var _this = this
+			this.$window.scroll(function(){
+				if(clock){
+					clearTimeout(clock)
+				}
+				var __this = _this
+				clock = setTimeout(function(){
+					if(__this.$window.scrollTop()+ __this.$window.height()+40 >= __this.$body.height()){
+						__this.getData()
+					}	
+				},300)		
+			})
+			this.getData()
+		},
+		getData:function(){
+			var _this = this
+			if(this.isLoading) return
+			this.isLoading = true
+			$.ajax({
+				url: 'http://platform.sina.com.cn/slide/album_tech',
+				dataType: 'jsonp',   
+				jsonp:"jsoncallback",
+				data: {
+					app_key: '1271687855',
+					num: perPageCount,
+					page: curPage
+				}
+			}).done(function(ret){
+				if(ret && ret.status && ret.status.code === "0"){		
+					_this.setData(ret.data)
+					   //如果数据没问题，那么生成节点并摆放好位置
+					curPage++
+				}else{
+					console.log('Error');
+				}
+			}).always(function(){
+				_this.isLoading = false
+			})
+		},
+		setData:function(news){
+			var _this = this
+			news.forEach(function(news){
+				var temp = `<div class="blk">
+				<a href="">
+					<img src="http://n.sinaimg.cn/tech/transform/w600h400/20180109/Rvxm-fyqnici7290391.jpg" alt="">
+					<div class="title">
+						<h4>肯尼亚五头大象相约打群架</h4>
+					</div>
+					<div class="detail">
+						肯尼亚南部西查沃国家公园，摄影师Shazaad Kasmani在当地拍摄到几头大象聚集打群架的画面。
+					</div>
+				</a>
+				</div>`
+				var $node = $(temp)
+				$node.find('img').attr('src',news.img_url)
+				$node.find('h4').text(news.short_name)
+				$node.find('.detail').text(news.short_intro)
+				_this.$container.append($node)	
+				var __this = _this		
+				$node.find('img').on('load',function(){
+					__this.paint($node)
+				})	
+					
+			})				
+		},
+		paint:function($node){
+			var _this = this
+			var minHeight = this.$colHeight[0]
+			var minIndex = 0		
+			for(var i=0;i<colNum;i++){
+				if(this.$colHeight[i]<minHeight){
+					minHeight=this.$colHeight[i]
+					minIndex = i
+				}		
+			}
+			$node.css({
+				'top': minHeight,
+				'left': minIndex * blkWidth
+			})
+			this.$colHeight[minIndex] = this.$colHeight[minIndex] + $node.outerHeight(true)	
+			
+			}
+	}
+	
+	waterfall.init()
+</script>
+</html>
