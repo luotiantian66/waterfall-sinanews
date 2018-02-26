@@ -132,6 +132,7 @@
 				</a>
 				</div>`
 				var $node = $(temp)
+				$node.find('a').attr('href',news.cmnt_url)
 				$node.find('img').attr('src',news.img_url)
 				$node.find('h4').text(news.short_name)
 				$node.find('.detail').text(news.short_intro)
